@@ -271,12 +271,12 @@ inline FragmentCommonData FragmentSetup (inout float4 i_tex, float3 i_eyeVec, ha
     o.eyeVec = NormalizePerPixelNormal(i_eyeVec);
     o.posWorld = i_posWorld;
 
-#if _HAIR
+    #if _HAIR
     half3 TangentDir = half3(sqrt(1 - _TangentDir * _TangentDir) ,_TangentDir, 0);
     o.tangentWorld = NormalizePerPixelNormal(normalize(tangentToWorld[0].xyz) * TangentDir.x + normalize(tangentToWorld[1].xyz) * TangentDir.y) * facing;
-#else
+    #else
     o.tangentWorld = tangentToWorld[0].xyz;
-#endif
+    #endif
 
     // NOTE: shader relies on pre-multiply alpha-blend (_SrcBlend = One, _DstBlend = OneMinusSrcAlpha)
     o.diffColor = PreMultiplyAlpha (o.diffColor, alpha, o.oneMinusReflectivity, /*out*/ o.alpha);
@@ -373,7 +373,6 @@ inline half4 VertexGIForward(VertexInput v, float3 posWorld, half3 normalWorld)
 
 // ------------------------------------------------------------------
 //  Base forward pass (directional light, emission, lightmaps, ...)
-
 struct VertexOutputForwardBase
 {
     UNITY_POSITION(pos);
@@ -381,13 +380,13 @@ struct VertexOutputForwardBase
     float3 eyeVec                         : TEXCOORD1;
     float4 tangentToWorldAndPackedData[3] : TEXCOORD2;    // [3x3:tangentToWorld | 1x3:viewDirForParallax or worldPos]
     half4 ambientOrLightmapUV             : TEXCOORD5;    // SH or Lightmap UV
-#if !defined (UNITY_HALF_PRECISION_FRAGMENT_SHADER_REGISTERS)
+    #if !defined (UNITY_HALF_PRECISION_FRAGMENT_SHADER_REGISTERS)
     UNITY_SHADOW_COORDS(6)
     UNITY_FOG_COORDS(7)
-#else
+    #else
     UNITY_LIGHTING_COORDS(6,7)
     UNITY_FOG_COORDS(8)
-#endif
+    #endif
         // next ones would not fit into SM2.0 limits, but they are always for SM3.0+
     #if UNITY_REQUIRE_FRAG_WORLDPOS && !UNITY_PACK_WORLDPOS_WITH_TANGENT
         float3 posWorld                 : TEXCOORD9;
@@ -406,10 +405,11 @@ VertexOutputForwardBase vertForwardBase(VertexInput v, half FUR_OFFSET = 0)
     UNITY_TRANSFER_INSTANCE_ID(v, o);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-#if _FUR
+    //毛发顶点偏移
+    #if _FUR
     half3 direction = lerp(v.normal, _Gravity * _GravityStrength + v.normal * (1 - _GravityStrength), FUR_OFFSET);
 	v.vertex.xyz += direction * _FurLength * FUR_OFFSET;
-#endif 
+    #endif 
 
     float4 posWorld = mul(unity_ObjectToWorld, v.vertex);
     #if UNITY_REQUIRE_FRAG_WORLDPOS
@@ -423,7 +423,9 @@ VertexOutputForwardBase vertForwardBase(VertexInput v, half FUR_OFFSET = 0)
     #endif
     o.pos = UnityObjectToClipPos(v.vertex);
 
+    //xy分量是主贴图的uv0的偏移结果 zw分量是第二个主贴图的uv 可选使用uv1 默认uv0
     o.tex = TexCoords(v);
+    //观察方向 可选归一化
     o.eyeVec = NormalizePerVertexNormal(posWorld.xyz - _WorldSpaceCameraPos);
     float3 normalWorld = UnityObjectToWorldNormal(v.normal);
     #ifdef _TANGENT_TO_WORLD
@@ -444,8 +446,10 @@ VertexOutputForwardBase vertForwardBase(VertexInput v, half FUR_OFFSET = 0)
 
     o.ambientOrLightmapUV = VertexGIForward(v, posWorld, normalWorld);
 
+    //是差贴图 Parallax Mapping
     #ifdef _PARALLAXMAP
         TANGENT_SPACE_ROTATION;
+        //将V向量转换到切线空间
         half3 viewDirForParallax = mul (rotation, ObjSpaceViewDir(v.vertex));
         o.tangentToWorldAndPackedData[0].w = viewDirForParallax.x;
         o.tangentToWorldAndPackedData[1].w = viewDirForParallax.y;
@@ -462,6 +466,7 @@ half4 fragForwardBaseInternal (VertexOutputForwardBase i, half FUR_OFFSET = 0)
     //抖动裁剪片元
     UNITY_APPLY_DITHER_CROSSFADE(i.pos.xy);
 
+    //计算表面与法线的朝向关系
     half facing = dot(-i.eyeVec, i.tangentToWorldAndPackedData[2].xyz);
     facing = saturate(ceil(facing)) * 2 - 1;
 
