@@ -260,8 +260,10 @@ inline FragmentCommonData MetallicSetup (float4 i_tex)
 // parallax transformed texcoord is used to sample occlusion
 inline FragmentCommonData FragmentSetup (inout float4 i_tex, float3 i_eyeVec, half3 i_viewDirForParallax, float4 tangentToWorld[3], float3 i_posWorld, half facing = 1)
 {
+    //视差贴图对UV进行偏移
     i_tex = Parallax(i_tex, i_viewDirForParallax);
 
+    //计算透明度
     half alpha = Alpha(i_tex.xy);
     #if defined(_ALPHATEST_ON)
         clip (alpha - _Cutoff);
@@ -447,7 +449,7 @@ VertexOutputForwardBase vertForwardBase(VertexInput v, half FUR_OFFSET = 0)
 
     o.ambientOrLightmapUV = VertexGIForward(v, posWorld, normalWorld);
 
-    //是差贴图 Parallax Mapping
+    //视差贴图 Parallax Mapping
     #ifdef _PARALLAXMAP
         TANGENT_SPACE_ROTATION;
         //将V向量转换到切线空间
