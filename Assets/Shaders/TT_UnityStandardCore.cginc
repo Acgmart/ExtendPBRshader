@@ -238,6 +238,7 @@ inline FragmentCommonData RoughnessSetup(float4 i_tex)
     return o;
 }
 
+//皮肤表面数据
 inline FragmentCommonData MetallicSetup (float4 i_tex)
 {
     half2 metallicGloss = MetallicGloss(i_tex.xy);

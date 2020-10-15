@@ -66,7 +66,7 @@ Shader "Kingsoft/TT_Character/Skin"
 
 		CGINCLUDE
 		#define UNITY_SETUP_BRDF_INPUT MetallicSetup
-		#define _NORMALMAP 1
+		#define _NORMALMAP 1 //使用法线贴图
 		#define _SKIN 1 //定义皮肤逻辑分支
 
 		sampler2D _BRDFTex; half4 _BRDFTex_ST;
