@@ -114,7 +114,7 @@ half3 WorldNormal(half4 tan2world[3])
 
 float3 PerPixelWorldNormal(float4 i_tex, float4 tangentToWorld[3], out float3 normalWorld_clearcoat)
 {
-#ifdef _NORMALMAP
+    #ifdef _NORMALMAP
     half3 tangent = tangentToWorld[0].xyz;
     half3 binormal = tangentToWorld[1].xyz;
     half3 normal = tangentToWorld[2].xyz;
@@ -140,10 +140,10 @@ float3 PerPixelWorldNormal(float4 i_tex, float4 tangentToWorld[3], out float3 no
         normalWorld = NormalizePerPixelNormal(tangent * normalTangent_flake.x + binormal * normalTangent_flake.y + normal * normalTangent_flake.z); // @TODO: see if we can squeeze this normalize on SM2.0 as well
     #endif
     
-#else
+    #else //not use _NORMALMAP
     float3 normalWorld = normalize(tangentToWorld[2].xyz);
     normalWorld_clearcoat = normalWorld;
-#endif
+    #endif
 
     return normalWorld;
 }
@@ -256,6 +256,7 @@ inline FragmentCommonData MetallicSetup (float4 i_tex)
     return o;
 }
 
+//FragmentSetup(i.tex, i.eyeVec, IN_VIEWDIR4PARALLAX(i), i.tangentToWorldAndPackedData, IN_WORLDPOS(i), facing);
 // parallax transformed texcoord is used to sample occlusion
 inline FragmentCommonData FragmentSetup (inout float4 i_tex, float3 i_eyeVec, half3 i_viewDirForParallax, float4 tangentToWorld[3], float3 i_posWorld, half facing = 1)
 {
